@@ -3,7 +3,9 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-.claude/
+.claude/settings.local.json
+.claude/research-notes.md
+.claude/agent-memory-local/
 /logs
 /sprites-export
 .env

@@ -1,6 +1,74 @@
-# Pixel Agents — Compressed Reference
+# Pixel Agents -- Compressed Reference
 
 VS Code extension with embedded React webview: pixel art office where AI agents (Claude Code terminals) are animated characters.
+
+## Coding Standards
+
+- Write clear, concise code. Prefer readability over cleverness.
+- Use descriptive names for variables, functions, and files.
+- Keep functions small and focused on a single responsibility.
+- Handle errors explicitly -- never swallow exceptions silently.
+- Validate inputs at system boundaries (user input, API responses, file I/O).
+- Avoid premature abstraction. Three similar lines are better than a forced helper.
+- Do not add comments for self-explanatory code. Add comments only when the "why" is non-obvious.
+- Files over 500 lines should be split. Large files consume excessive context.
+
+## Subagent Usage
+
+Always and aggressively offload to subagents: online research, doc fetching, log analysis, codebase exploration. This keeps the main context narrow.
+
+- **Always include a "why"** in every subagent prompt. Not just what to find, but why you need it.
+- **Parallel exploration:** When torn between approaches, spin up parallel Explore subagents for each, pass results back, let the main session decide.
+- **Subagents are resumable.** You can resume a specific subagent to continue its research.
+
+## Planning
+
+- Planning is **phase-based**, not timeline-based. Phases: Foundation, Core, Polish, Ship.
+- Always plan in one session, execute in another. Clear context between planning and implementation.
+- Save every plan to a `/tasks` folder. This lets you selectively undo a feature later.
+- For big features, use the **spec-developer** skill to generate a thorough plan.
+
+## Context Management
+
+- Break tasks small enough to complete in under 50% context usage.
+- Use `/compact` proactively around 50% context.
+- Start fresh conversations for unrelated topics.
+- Begin complex tasks in plan mode before implementation.
+- **Code bias fix:** If stuck in bad patterns, build the feature in isolation in a fresh folder, then port it in.
+- **Document failed attempts:** For stubborn bugs, have Claude write a document of all attempted fixes before starting a new session. New session loads the document, avoids repeating dead ends.
+- **Handoff docs:** Use `/handoff` to create a summary before ending a session. Load in fresh session as sole context.
+
+## Available Skills
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| update-practices | "update practices" | Fetch latest best practices and update config |
+| spec-developer | "spec developer" | Interview-driven feature spec saved to /tasks |
+| code-review | "code review" | Full codebase review with severity levels |
+| security-scan | "security scan" | OWASP-style security audit |
+| performance-review | "performance review" | Performance analysis with fix recommendations |
+| dependency-audit | "dependency audit" | Check dependencies for updates and vulnerabilities |
+| test-scaffold | "scaffold tests" | Generate test files for untested modules |
+| doc-sync | "sync docs" | Align documentation with current code |
+| mermaid-diagram | "mermaid diagram" | Generate data flow / architecture diagrams |
+
+## Available Agents
+
+See `agents.md` in the repo root for the full agent registry. Key agents:
+
+- **architect** -- phase-based planning, tech stack decisions, file structure design
+- **reviewer** -- code review focused on correctness and maintainability
+- **security** -- security-focused analysis and vulnerability detection
+- **performance** -- performance-focused analysis and optimization
+- **explorer** -- codebase exploration, research, and context gathering
+
+## Workflow
+
+1. Read existing code before proposing changes.
+2. Prefer editing existing files over creating new ones.
+3. Do not over-engineer. Only make changes that are directly requested or clearly necessary.
+4. Use the source URL registry at `.claude/references/source-urls.md` when fetching best practices -- never hardcode URLs in skills.
+5. Check `.claude/references/tools.md` for available CLI tools before running commands. Offer to install missing tools.
 
 ## Architecture
 
