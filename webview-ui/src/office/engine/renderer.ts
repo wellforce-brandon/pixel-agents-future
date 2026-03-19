@@ -1,17 +1,7 @@
 import { TileType, TILE_SIZE, CharacterState } from '../types.js'
 import type { TileType as TileTypeVal, FurnitureInstance, Character, SpriteData, Seat, FloorColor } from '../types.js'
-import { getCachedSprite, getOutlineSprite } from '../sprites/spriteCache.js'
-import { getCharacterSprites, BUBBLE_PERMISSION_SPRITE, BUBBLE_WAITING_SPRITE } from '../sprites/spriteData.js'
-import { getCharacterSprite } from './characters.js'
-import { renderMatrixEffect } from './matrixEffect.js'
-import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles.js'
-import { hasWallSprites, getWallInstances, wallColorToHex } from '../wallTiles.js'
+import { getCachedSprite } from '../sprites/spriteCache.js'
 import {
-  CHARACTER_SITTING_OFFSET_PX,
-  CHARACTER_Z_SORT_OFFSET,
-  OUTLINE_Z_SORT_OFFSET,
-  SELECTED_OUTLINE_ALPHA,
-  HOVERED_OUTLINE_ALPHA,
   GHOST_PREVIEW_SPRITE_ALPHA,
   GHOST_PREVIEW_TINT_ALPHA,
   SELECTION_DASH_PATTERN,
@@ -20,13 +10,6 @@ import {
   BUTTON_ICON_SIZE_FACTOR,
   BUTTON_LINE_WIDTH_MIN,
   BUTTON_LINE_WIDTH_ZOOM_FACTOR,
-  BUBBLE_FADE_DURATION_SEC,
-  BUBBLE_SITTING_OFFSET_PX,
-  BUBBLE_VERTICAL_OFFSET_PX,
-  FALLBACK_FLOOR_COLOR,
-  SEAT_OWN_COLOR,
-  SEAT_AVAILABLE_COLOR,
-  SEAT_BUSY_COLOR,
   GRID_LINE_COLOR,
   VOID_TILE_OUTLINE_COLOR,
   VOID_TILE_DASH_PATTERN,
@@ -40,6 +23,107 @@ import {
   ROTATE_BUTTON_BG,
 } from '../../constants.js'
 
+// ── Orb palette ────────────────────────────────────────────────
+
+const ORB_COLORS = [
+  '#00e5ff', // cyan
+  '#00ff87', // green
+  '#ff9f43', // orange
+  '#c084fc', // purple
+  '#2dd4bf', // teal
+  '#f472b6', // pink
+  '#60a5fa', // blue
+  '#fbbf24', // amber
+]
+
+function getOrbColor(paletteIndex: number): string {
+  return ORB_COLORS[paletteIndex % ORB_COLORS.length]
+}
+
+// ── Orb drawing helpers ────────────────────────────────────────
+
+function drawOrb(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  color: string,
+  intensity: number,
+  alpha: number,
+): void {
+  ctx.save()
+  ctx.globalAlpha = alpha
+
+  // Outer glow
+  const glowRadius = radius * (1.5 + intensity * 0.5)
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius)
+  glow.addColorStop(0, color)
+  glow.addColorStop(0.4, color + '60')
+  glow.addColorStop(1, color + '00')
+  ctx.fillStyle = glow
+  ctx.beginPath()
+  ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Core orb
+  const core = ctx.createRadialGradient(cx, cy - radius * 0.2, radius * 0.1, cx, cy, radius)
+  core.addColorStop(0, '#ffffff')
+  core.addColorStop(0.3, color)
+  core.addColorStop(1, color + '80')
+  ctx.fillStyle = core
+  ctx.shadowColor = color
+  ctx.shadowBlur = radius * intensity * 2
+  ctx.beginPath()
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.restore()
+}
+
+function drawWarningRing(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  time: number,
+): void {
+  ctx.save()
+  const ringRadius = radius * 1.6
+  ctx.strokeStyle = '#ffaa00'
+  ctx.lineWidth = 2
+  ctx.shadowColor = '#ffaa00'
+  ctx.shadowBlur = 8
+  ctx.setLineDash([4, 4])
+  ctx.lineDashOffset = -time * 40
+  ctx.beginPath()
+  ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawSelectedRing(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  time: number,
+): void {
+  ctx.save()
+  const ringRadius = radius * 1.5
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 4])
+  ctx.lineDashOffset = -time * 30
+  ctx.beginPath()
+  ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.restore()
+}
+
+// ── Zone labels ────────────────────────────────────────────────
+
+const ZONE_LABELS = ['Code Review', 'Research', 'Planning']
+
 // ── Render functions ────────────────────────────────────────────
 
 export function renderTileGrid(
@@ -48,55 +132,81 @@ export function renderTileGrid(
   offsetX: number,
   offsetY: number,
   zoom: number,
-  tileColors?: Array<FloorColor | null>,
+  _tileColors?: Array<FloorColor | null>,
   cols?: number,
 ): void {
   const s = TILE_SIZE * zoom
-  const useSpriteFloors = hasFloorSprites()
   const tmRows = tileMap.length
   const tmCols = tmRows > 0 ? tileMap[0].length : 0
   const layoutCols = cols ?? tmCols
 
-  // Floor tiles + wall base color
-  for (let r = 0; r < tmRows; r++) {
-    for (let c = 0; c < tmCols; c++) {
-      const tile = tileMap[r][c]
+  // Dark background fill for the grid area
+  ctx.fillStyle = '#080c18'
+  ctx.fillRect(offsetX, offsetY, layoutCols * s, tmRows * s)
 
-      // Skip VOID tiles entirely (transparent)
-      if (tile === TileType.VOID) continue
+  // Faint grid lines
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  for (let c = 0; c <= layoutCols; c++) {
+    const x = offsetX + c * s + 0.5
+    ctx.moveTo(x, offsetY)
+    ctx.lineTo(x, offsetY + tmRows * s)
+  }
+  for (let r = 0; r <= tmRows; r++) {
+    const y = offsetY + r * s + 0.5
+    ctx.moveTo(offsetX, y)
+    ctx.lineTo(offsetX + layoutCols * s, y)
+  }
+  ctx.stroke()
 
-      if (tile === TileType.WALL || !useSpriteFloors) {
-        // Wall tiles or fallback: solid color
-        if (tile === TileType.WALL) {
-          const colorIdx = r * layoutCols + c
-          const wallColor = tileColors?.[colorIdx]
-          ctx.fillStyle = wallColor ? wallColorToHex(wallColor) : WALL_COLOR
-        } else {
-          ctx.fillStyle = FALLBACK_FLOOR_COLOR
-        }
-        ctx.fillRect(offsetX + c * s, offsetY + r * s, s, s)
-        continue
-      }
-
-      // Floor tile: get colorized sprite
-      const colorIdx = r * layoutCols + c
-      const color = tileColors?.[colorIdx] ?? { h: 0, s: 0, b: 0, c: 0 }
-      const sprite = getColorizedFloorSprite(tile, color)
-      const cached = getCachedSprite(sprite, zoom)
-      ctx.drawImage(cached, offsetX + c * s, offsetY + r * s)
+  // Zone divider lines (split into thirds vertically)
+  const zoneCount = Math.min(3, layoutCols)
+  if (zoneCount > 1) {
+    ctx.save()
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.15)'
+    ctx.lineWidth = 1
+    ctx.setLineDash([6, 4])
+    const zoneCols = layoutCols / zoneCount
+    for (let z = 1; z < zoneCount; z++) {
+      const x = offsetX + Math.round(zoneCols * z) * s + 0.5
+      ctx.beginPath()
+      ctx.moveTo(x, offsetY)
+      ctx.lineTo(x, offsetY + tmRows * s)
+      ctx.stroke()
     }
+    ctx.restore()
   }
 
+  // Zone labels
+  const labelFontSize = Math.max(10, Math.round(12 * zoom))
+  ctx.save()
+  ctx.font = `${labelFontSize}px monospace`
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.25)'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
+  const zoneCols = layoutCols / Math.min(3, layoutCols)
+  for (let z = 0; z < Math.min(3, layoutCols); z++) {
+    const label = ZONE_LABELS[z] || ''
+    const lx = offsetX + Math.round(zoneCols * z) * s + 6 * zoom
+    const ly = offsetY + 4 * zoom
+    ctx.fillText(label, lx, ly)
+  }
+  ctx.restore()
 }
 
-interface ZDrawable {
-  zY: number
-  draw: (ctx: CanvasRenderingContext2D) => void
+// Track time for animations
+let animationTime = 0
+const animStart = performance.now()
+
+function getTime(): number {
+  animationTime = (performance.now() - animStart) / 1000
+  return animationTime
 }
 
 export function renderScene(
   ctx: CanvasRenderingContext2D,
-  furniture: FurnitureInstance[],
+  _furniture: FurnitureInstance[],
   characters: Character[],
   offsetX: number,
   offsetY: number,
@@ -104,125 +214,79 @@ export function renderScene(
   selectedAgentId: number | null,
   hoveredAgentId: number | null,
 ): void {
-  const drawables: ZDrawable[] = []
+  const time = getTime()
+  const orbRadius = Math.max(6, TILE_SIZE * zoom * 0.35)
 
-  // Furniture
-  for (const f of furniture) {
-    const cached = getCachedSprite(f.sprite, zoom)
-    const fx = offsetX + f.x * zoom
-    const fy = offsetY + f.y * zoom
-    drawables.push({
-      zY: f.zY,
-      draw: (c) => {
-        c.drawImage(cached, fx, fy)
-      },
-    })
-  }
-
-  // Characters
+  // Characters as orbs (no furniture rendering)
   for (const ch of characters) {
-    const sprites = getCharacterSprites(ch.palette, ch.hueShift)
-    const spriteData = getCharacterSprite(ch, sprites)
-    const cached = getCachedSprite(spriteData, zoom)
-    // Sitting offset: shift character down when seated so they visually sit in the chair
-    const sittingOffset = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0
-    // Anchor at bottom-center of character — round to integer device pixels
-    const drawX = Math.round(offsetX + ch.x * zoom - cached.width / 2)
-    const drawY = Math.round(offsetY + (ch.y + sittingOffset) * zoom - cached.height)
+    const cx = offsetX + ch.x * zoom
+    const cy = offsetY + ch.y * zoom
+    const color = getOrbColor(ch.palette)
 
-    // Sort characters by bottom of their tile (not center) so they render
-    // in front of same-row furniture (e.g. chairs) but behind furniture
-    // at lower rows (e.g. desks, bookshelves that occlude from below).
-    const charZY = ch.y + TILE_SIZE / 2 + CHARACTER_Z_SORT_OFFSET
-
-    // Matrix spawn/despawn effect — skip outline, use per-pixel rendering
+    // Spawn/despawn fade+scale
+    let alpha = 1.0
+    let scale = 1.0
     if (ch.matrixEffect) {
-      const mDrawX = drawX
-      const mDrawY = drawY
-      const mSpriteData = spriteData
-      const mCh = ch
-      drawables.push({
-        zY: charZY,
-        draw: (c) => {
-          renderMatrixEffect(c, mCh, mSpriteData, mDrawX, mDrawY, zoom)
-        },
-      })
-      continue
+      const progress = ch.matrixEffectTimer
+      if (ch.matrixEffect === 'spawn') {
+        alpha = Math.min(1, progress * 3)
+        scale = 0.3 + 0.7 * Math.min(1, progress * 2)
+      } else {
+        alpha = Math.max(0, 1 - progress * 3)
+        scale = 1 - 0.5 * Math.min(1, progress * 2)
+      }
     }
 
-    // White outline: full opacity for selected, 50% for hover
+    // State-based glow intensity
+    let intensity = 0.4 // idle default
+    if (ch.state === CharacterState.TYPE) {
+      // Active/typing: pulsing glow
+      intensity = 0.6 + 0.3 * Math.sin(time * 3 + ch.id)
+    } else if (ch.state === CharacterState.WALK) {
+      intensity = 0.5
+    }
+
+    const r = orbRadius * scale
+    drawOrb(ctx, cx, cy, r, color, intensity, alpha)
+
+    // Permission state: amber warning ring
+    if (ch.bubbleType === 'permission') {
+      drawWarningRing(ctx, cx, cy, r, time)
+    }
+
+    // Selected orb: dashed ring
     const isSelected = selectedAgentId !== null && ch.id === selectedAgentId
-    const isHovered = hoveredAgentId !== null && ch.id === hoveredAgentId
-    if (isSelected || isHovered) {
-      const outlineAlpha = isSelected ? SELECTED_OUTLINE_ALPHA : HOVERED_OUTLINE_ALPHA
-      const outlineData = getOutlineSprite(spriteData)
-      const outlineCached = getCachedSprite(outlineData, zoom)
-      const olDrawX = drawX - zoom  // 1 sprite-pixel offset, scaled
-      const olDrawY = drawY - zoom  // outline follows sitting offset via drawY
-      drawables.push({
-        zY: charZY - OUTLINE_Z_SORT_OFFSET, // sort just before character
-        draw: (c) => {
-          c.save()
-          c.globalAlpha = outlineAlpha
-          c.drawImage(outlineCached, olDrawX, olDrawY)
-          c.restore()
-        },
-      })
+    if (isSelected) {
+      drawSelectedRing(ctx, cx, cy, r, time)
     }
 
-    drawables.push({
-      zY: charZY,
-      draw: (c) => {
-        c.drawImage(cached, drawX, drawY)
-      },
-    })
-  }
-
-  // Sort by Y (lower = in front = drawn later)
-  drawables.sort((a, b) => a.zY - b.zY)
-
-  for (const d of drawables) {
-    d.draw(ctx)
+    // Hovered orb: subtle brightening ring
+    const isHovered = hoveredAgentId !== null && ch.id === hoveredAgentId
+    if (isHovered && !isSelected) {
+      ctx.save()
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(cx, cy, r * 1.4, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+    }
   }
 }
 
-// ── Seat indicators ─────────────────────────────────────────────
+// ── Seat indicators (no-op in dashboard theme) ──────────────────
 
 export function renderSeatIndicators(
-  ctx: CanvasRenderingContext2D,
-  seats: Map<string, Seat>,
-  characters: Map<number, Character>,
-  selectedAgentId: number | null,
-  hoveredTile: { col: number; row: number } | null,
-  offsetX: number,
-  offsetY: number,
-  zoom: number,
+  _ctx: CanvasRenderingContext2D,
+  _seats: Map<string, Seat>,
+  _characters: Map<number, Character>,
+  _selectedAgentId: number | null,
+  _hoveredTile: { col: number; row: number } | null,
+  _offsetX: number,
+  _offsetY: number,
+  _zoom: number,
 ): void {
-  if (selectedAgentId === null || !hoveredTile) return
-  const selectedChar = characters.get(selectedAgentId)
-  if (!selectedChar) return
-
-  // Only show indicator for the hovered seat tile
-  for (const [uid, seat] of seats) {
-    if (seat.seatCol !== hoveredTile.col || seat.seatRow !== hoveredTile.row) continue
-
-    const s = TILE_SIZE * zoom
-    const x = offsetX + seat.seatCol * s
-    const y = offsetY + seat.seatRow * s
-
-    if (selectedChar.seatId === uid) {
-      // Selected agent's own seat — blue
-      ctx.fillStyle = SEAT_OWN_COLOR
-    } else if (!seat.assigned) {
-      // Available seat — green
-      ctx.fillStyle = SEAT_AVAILABLE_COLOR
-    } else {
-      // Busy (assigned to another agent) — red
-      ctx.fillStyle = SEAT_BUSY_COLOR
-    }
-    ctx.fillRect(x, y, s, s)
-    break
-  }
+  // No-op: orb selection ring replaces seat highlights
 }
 
 // ── Edit mode overlays ──────────────────────────────────────────
@@ -240,7 +304,7 @@ export function renderGridOverlay(
   ctx.strokeStyle = GRID_LINE_COLOR
   ctx.lineWidth = 1
   ctx.beginPath()
-  // Vertical lines — offset by 0.5 for crisp 1px lines
+  // Vertical lines -- offset by 0.5 for crisp 1px lines
   for (let c = 0; c <= cols; c++) {
     const x = offsetX + c * s + 0.5
     ctx.moveTo(x, offsetY)
@@ -445,41 +509,17 @@ export function renderRotateButton(
   return { cx, cy, radius }
 }
 
-// ── Speech bubbles ──────────────────────────────────────────────
+// ── Speech bubbles (no-op in dashboard theme) ───────────────────
 
 export function renderBubbles(
-  ctx: CanvasRenderingContext2D,
-  characters: Character[],
-  offsetX: number,
-  offsetY: number,
-  zoom: number,
+  _ctx: CanvasRenderingContext2D,
+  _characters: Character[],
+  _offsetX: number,
+  _offsetY: number,
+  _zoom: number,
 ): void {
-  for (const ch of characters) {
-    if (!ch.bubbleType) continue
-
-    const sprite = ch.bubbleType === 'permission'
-      ? BUBBLE_PERMISSION_SPRITE
-      : BUBBLE_WAITING_SPRITE
-
-    // Compute opacity: permission = full, waiting = fade in last 0.5s
-    let alpha = 1.0
-    if (ch.bubbleType === 'waiting' && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
-      alpha = ch.bubbleTimer / BUBBLE_FADE_DURATION_SEC
-    }
-
-    const cached = getCachedSprite(sprite, zoom)
-    // Position: centered above the character's head
-    // Character is anchored bottom-center at (ch.x, ch.y), sprite is 16x24
-    // Place bubble above head with a small gap; follow sitting offset
-    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0
-    const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2)
-    const bubbleY = Math.round(offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom)
-
-    ctx.save()
-    if (alpha < 1.0) ctx.globalAlpha = alpha
-    ctx.drawImage(cached, bubbleX, bubbleY)
-    ctx.restore()
-  }
+  // No-op: permission state is shown as amber ring around orb;
+  // ToolOverlay HTML handles text info
 }
 
 export interface ButtonBounds {
@@ -531,7 +571,7 @@ export function renderFrame(
   canvasWidth: number,
   canvasHeight: number,
   tileMap: TileTypeVal[][],
-  furniture: FurnitureInstance[],
+  _furniture: FurnitureInstance[],
   characters: Character[],
   zoom: number,
   panX: number,
@@ -555,28 +595,20 @@ export function renderFrame(
   const offsetX = Math.floor((canvasWidth - mapW) / 2) + Math.round(panX)
   const offsetY = Math.floor((canvasHeight - mapH) / 2) + Math.round(panY)
 
-  // Draw tiles (floor + wall base color)
+  // Draw dashboard grid background
   renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols)
 
-  // Seat indicators (below furniture/characters, on top of floor)
+  // Seat indicators (no-op in dashboard theme)
   if (selection) {
     renderSeatIndicators(ctx, selection.seats, selection.characters, selection.selectedAgentId, selection.hoveredTile, offsetX, offsetY, zoom)
   }
 
-  // Build wall instances for z-sorting with furniture and characters
-  const wallInstances = hasWallSprites()
-    ? getWallInstances(tileMap, tileColors, layoutCols)
-    : []
-  const allFurniture = wallInstances.length > 0
-    ? [...wallInstances, ...furniture]
-    : furniture
-
-  // Draw walls + furniture + characters (z-sorted)
+  // Draw orbs (skip furniture - no visual rendering in dashboard theme)
   const selectedId = selection?.selectedAgentId ?? null
   const hoveredId = selection?.hoveredAgentId ?? null
-  renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId)
+  renderScene(ctx, [], characters, offsetX, offsetY, zoom, selectedId, hoveredId)
 
-  // Speech bubbles (always on top of characters)
+  // Speech bubbles (no-op in dashboard theme)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
 
   // Editor overlays

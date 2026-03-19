@@ -53,11 +53,11 @@ export function SettingsModal({ isOpen, onClose, isDebugMode, onToggleDebugMode 
           left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 50,
-          background: 'var(--pixel-bg)',
-          border: '2px solid var(--pixel-border)',
+          background: 'var(--dash-bg)',
+          border: '2px solid var(--dash-border)',
           borderRadius: 0,
           padding: '4px',
-          boxShadow: 'var(--pixel-shadow)',
+          boxShadow: 'var(--dash-shadow)',
           minWidth: 200,
         }}
       >
@@ -68,7 +68,7 @@ export function SettingsModal({ isOpen, onClose, isDebugMode, onToggleDebugMode 
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '4px 10px',
-            borderBottom: '1px solid var(--pixel-border)',
+            borderBottom: '1px solid var(--dash-border)',
             marginBottom: '4px',
           }}
         >

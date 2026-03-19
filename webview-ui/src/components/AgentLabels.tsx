@@ -97,7 +97,7 @@ export function AgentLabels({
           >
             {dotColor !== 'transparent' && (
               <span
-                className={isActive && !isWaiting ? 'pixel-agents-pulse' : undefined}
+                className={isActive && !isWaiting ? 'dash-pulse' : undefined}
                 style={{
                   width: 6,
                   height: 6,
@@ -112,7 +112,7 @@ export function AgentLabels({
                 fontSize: isSub ? '16px' : '18px',
                 fontStyle: isSub ? 'italic' : undefined,
                 color: 'var(--vscode-foreground)',
-                background: 'rgba(30,30,46,0.7)',
+                background: 'rgba(10,14,26,0.8)',
                 padding: '1px 4px',
                 borderRadius: 2,
                 whiteSpace: 'nowrap',

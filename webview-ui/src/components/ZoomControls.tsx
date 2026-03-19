@@ -16,15 +16,15 @@ const btnBase: React.CSSProperties = {
   width: 40,
   height: 40,
   padding: 0,
-  background: 'var(--pixel-bg)',
-  color: 'var(--pixel-text)',
-  border: '2px solid var(--pixel-border)',
+  background: 'var(--dash-bg)',
+  color: 'var(--dash-text)',
+  border: '2px solid var(--dash-border)',
   borderRadius: 0,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: 'var(--pixel-shadow)',
+  boxShadow: 'var(--dash-shadow)',
 }
 
 export function ZoomControls({ zoom, onZoomChange }: ZoomControlsProps) {
@@ -77,14 +77,14 @@ export function ZoomControls({ zoom, onZoomChange }: ZoomControlsProps) {
             top: 10,
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 'var(--pixel-controls-z)',
-            background: 'var(--pixel-bg)',
-            border: '2px solid var(--pixel-border)',
+            zIndex: 'var(--dash-controls-z)',
+            background: 'var(--dash-bg)',
+            border: '2px solid var(--dash-border)',
             borderRadius: 0,
             padding: '4px 12px',
-            boxShadow: 'var(--pixel-shadow)',
+            boxShadow: 'var(--dash-shadow)',
             fontSize: '26px',
-            color: 'var(--pixel-text)',
+            color: 'var(--dash-text)',
             userSelect: 'none',
             opacity: fadeOut ? 0 : 1,
             transition: `opacity ${ZOOM_LEVEL_FADE_DURATION_SEC}s ease-out`,
@@ -101,7 +101,7 @@ export function ZoomControls({ zoom, onZoomChange }: ZoomControlsProps) {
           position: 'absolute',
           top: 8,
           left: 8,
-          zIndex: 'var(--pixel-controls-z)',
+          zIndex: 'var(--dash-controls-z)',
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
@@ -114,9 +114,9 @@ export function ZoomControls({ zoom, onZoomChange }: ZoomControlsProps) {
           onMouseLeave={() => setHovered(null)}
           style={{
             ...btnBase,
-            background: hovered === 'plus' && !maxDisabled ? 'var(--pixel-btn-hover-bg)' : btnBase.background,
+            background: hovered === 'plus' && !maxDisabled ? 'var(--dash-btn-hover-bg)' : btnBase.background,
             cursor: maxDisabled ? 'default' : 'pointer',
-            opacity: maxDisabled ? 'var(--pixel-btn-disabled-opacity)' : 1,
+            opacity: maxDisabled ? 'var(--dash-btn-disabled-opacity)' : 1,
           }}
           title="Zoom in (Ctrl+Scroll)"
         >
@@ -132,9 +132,9 @@ export function ZoomControls({ zoom, onZoomChange }: ZoomControlsProps) {
           onMouseLeave={() => setHovered(null)}
           style={{
             ...btnBase,
-            background: hovered === 'minus' && !minDisabled ? 'var(--pixel-btn-hover-bg)' : btnBase.background,
+            background: hovered === 'minus' && !minDisabled ? 'var(--dash-btn-hover-bg)' : btnBase.background,
             cursor: minDisabled ? 'default' : 'pointer',
-            opacity: minDisabled ? 'var(--pixel-btn-disabled-opacity)' : 1,
+            opacity: minDisabled ? 'var(--dash-btn-disabled-opacity)' : 1,
           }}
           title="Zoom out (Ctrl+Scroll)"
         >

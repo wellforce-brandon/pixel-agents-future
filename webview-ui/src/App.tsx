@@ -29,8 +29,8 @@ function getOfficeState(): OfficeState {
 const actionBarBtnStyle: React.CSSProperties = {
   padding: '4px 10px',
   fontSize: '22px',
-  background: 'var(--pixel-btn-bg)',
-  color: 'var(--pixel-text-dim)',
+  background: 'var(--dash-btn-bg)',
+  color: 'var(--dash-text-dim)',
   border: '2px solid transparent',
   borderRadius: 0,
   cursor: 'pointer',
@@ -38,7 +38,7 @@ const actionBarBtnStyle: React.CSSProperties = {
 
 const actionBarBtnDisabled: React.CSSProperties = {
   ...actionBarBtnStyle,
-  opacity: 'var(--pixel-btn-disabled-opacity)',
+  opacity: 'var(--dash-btn-disabled-opacity)',
   cursor: 'default',
 }
 
@@ -55,15 +55,15 @@ function EditActionBar({ editor, editorState: es }: { editor: ReturnType<typeof 
         top: 8,
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 'var(--pixel-controls-z)',
+        zIndex: 'var(--dash-controls-z)',
         display: 'flex',
         gap: 4,
         alignItems: 'center',
-        background: 'var(--pixel-bg)',
-        border: '2px solid var(--pixel-border)',
+        background: 'var(--dash-bg)',
+        border: '2px solid var(--dash-border)',
         borderRadius: 0,
         padding: '4px 8px',
-        boxShadow: 'var(--pixel-shadow)',
+        boxShadow: 'var(--dash-shadow)',
       }}
     >
       <button
@@ -97,9 +97,9 @@ function EditActionBar({ editor, editorState: es }: { editor: ReturnType<typeof 
         </button>
       ) : (
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <span style={{ fontSize: '22px', color: 'var(--pixel-reset-text)' }}>Reset?</span>
+          <span style={{ fontSize: '22px', color: 'var(--dash-reset-text)' }}>Reset?</span>
           <button
-            style={{ ...actionBarBtnStyle, background: 'var(--pixel-danger-bg)', color: '#fff' }}
+            style={{ ...actionBarBtnStyle, background: 'var(--dash-danger-bg)', color: '#fff' }}
             onClick={() => { setShowResetConfirm(false); editor.handleReset() }}
           >
             Yes
@@ -186,11 +186,11 @@ function App() {
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
       <style>{`
-        @keyframes pixel-agents-pulse {
+        @keyframes dash-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        .pixel-agents-pulse { animation: pixel-agents-pulse ${PULSE_ANIMATION_DURATION_SEC}s ease-in-out infinite; }
+        .dash-pulse { animation: dash-pulse ${PULSE_ANIMATION_DURATION_SEC}s ease-in-out infinite; }
       `}</style>
 
       <OfficeCanvas
@@ -217,7 +217,7 @@ function App() {
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'var(--pixel-vignette)',
+          background: 'var(--dash-vignette)',
           pointerEvents: 'none',
           zIndex: 40,
         }}
@@ -244,13 +244,13 @@ function App() {
             left: '50%',
             transform: editor.isDirty ? 'translateX(calc(-50% + 100px))' : 'translateX(-50%)',
             zIndex: 49,
-            background: 'var(--pixel-hint-bg)',
+            background: 'var(--dash-hint-bg)',
             color: '#fff',
             fontSize: '20px',
             padding: '3px 8px',
             borderRadius: 0,
-            border: '2px solid var(--pixel-accent)',
-            boxShadow: 'var(--pixel-shadow)',
+            border: '2px solid var(--dash-accent)',
+            boxShadow: 'var(--dash-shadow)',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
           }}

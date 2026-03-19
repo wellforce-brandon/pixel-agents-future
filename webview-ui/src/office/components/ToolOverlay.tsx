@@ -119,9 +119,9 @@ export function ToolOverlay({
 
         let dotColor: string | null = null
         if (hasPermission) {
-          dotColor = 'var(--pixel-status-permission)'
+          dotColor = 'var(--dash-status-permission)'
         } else if (isActive && hasActiveTools) {
-          dotColor = 'var(--pixel-status-active)'
+          dotColor = 'var(--dash-status-active)'
         }
 
         return (
@@ -136,7 +136,7 @@ export function ToolOverlay({
               flexDirection: 'column',
               alignItems: 'center',
               pointerEvents: isSelected ? 'auto' : 'none',
-              zIndex: isSelected ? 'var(--pixel-overlay-selected-z)' : 'var(--pixel-overlay-z)',
+              zIndex: isSelected ? 'var(--dash-overlay-selected-z)' : 'var(--dash-overlay-z)',
             }}
           >
             <div
@@ -144,20 +144,20 @@ export function ToolOverlay({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
-                background: 'var(--pixel-bg)',
+                background: 'var(--dash-bg)',
                 border: isSelected
-                  ? '2px solid var(--pixel-border-light)'
-                  : '2px solid var(--pixel-border)',
+                  ? '2px solid var(--dash-border-light)'
+                  : '2px solid var(--dash-border)',
                 borderRadius: 0,
                 padding: isSelected ? '3px 6px 3px 8px' : '3px 8px',
-                boxShadow: 'var(--pixel-shadow)',
+                boxShadow: 'var(--dash-shadow)',
                 whiteSpace: 'nowrap',
                 maxWidth: 220,
               }}
             >
               {dotColor && (
                 <span
-                  className={isActive && !hasPermission ? 'pixel-agents-pulse' : undefined}
+                  className={isActive && !hasPermission ? 'dash-pulse' : undefined}
                   style={{
                     width: 6,
                     height: 6,
@@ -184,7 +184,7 @@ export function ToolOverlay({
                   <span
                     style={{
                       fontSize: '16px',
-                      color: 'var(--pixel-text-dim)',
+                      color: 'var(--dash-text-dim)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       display: 'block',
@@ -204,7 +204,7 @@ export function ToolOverlay({
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: 'var(--pixel-close-text)',
+                    color: 'var(--dash-close-text)',
                     cursor: 'pointer',
                     padding: '0 2px',
                     fontSize: '26px',
@@ -213,10 +213,10 @@ export function ToolOverlay({
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = 'var(--pixel-close-hover)'
+                    (e.currentTarget as HTMLElement).style.color = 'var(--dash-close-hover)'
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = 'var(--pixel-close-text)'
+                    (e.currentTarget as HTMLElement).style.color = 'var(--dash-close-text)'
                   }}
                 >
                   ×

@@ -16,22 +16,22 @@ const panelStyle: React.CSSProperties = {
   position: 'absolute',
   bottom: 10,
   left: 10,
-  zIndex: 'var(--pixel-controls-z)',
+  zIndex: 'var(--dash-controls-z)',
   display: 'flex',
   alignItems: 'center',
   gap: 4,
-  background: 'var(--pixel-bg)',
-  border: '2px solid var(--pixel-border)',
+  background: 'var(--dash-bg)',
+  border: '2px solid var(--dash-border)',
   borderRadius: 0,
   padding: '4px 6px',
-  boxShadow: 'var(--pixel-shadow)',
+  boxShadow: 'var(--dash-shadow)',
 }
 
 const btnBase: React.CSSProperties = {
   padding: '5px 10px',
   fontSize: '24px',
-  color: 'var(--pixel-text)',
-  background: 'var(--pixel-btn-bg)',
+  color: 'var(--dash-text)',
+  background: 'var(--dash-btn-bg)',
   border: '2px solid transparent',
   borderRadius: 0,
   cursor: 'pointer',
@@ -39,8 +39,8 @@ const btnBase: React.CSSProperties = {
 
 const btnActive: React.CSSProperties = {
   ...btnBase,
-  background: 'var(--pixel-active-bg)',
-  border: '2px solid var(--pixel-accent)',
+  background: 'var(--dash-active-bg)',
+  border: '2px solid var(--dash-accent)',
 }
 
 
@@ -97,10 +97,10 @@ export function BottomToolbar({
             padding: '5px 12px',
             background:
               hovered === 'agent' || isFolderPickerOpen
-                ? 'var(--pixel-agent-hover-bg)'
-                : 'var(--pixel-agent-bg)',
-            border: '2px solid var(--pixel-agent-border)',
-            color: 'var(--pixel-agent-text)',
+                ? 'var(--dash-agent-hover-bg)'
+                : 'var(--dash-agent-bg)',
+            border: '2px solid var(--dash-agent-border)',
+            color: 'var(--dash-agent-text)',
           }}
         >
           + Agent
@@ -112,12 +112,12 @@ export function BottomToolbar({
               bottom: '100%',
               left: 0,
               marginBottom: 4,
-              background: 'var(--pixel-bg)',
-              border: '2px solid var(--pixel-border)',
+              background: 'var(--dash-bg)',
+              border: '2px solid var(--dash-border)',
               borderRadius: 0,
-              boxShadow: 'var(--pixel-shadow)',
+              boxShadow: 'var(--dash-shadow)',
               minWidth: 160,
-              zIndex: 'var(--pixel-controls-z)',
+              zIndex: 'var(--dash-controls-z)',
             }}
           >
             {workspaceFolders.map((folder, i) => (
@@ -132,8 +132,8 @@ export function BottomToolbar({
                   textAlign: 'left',
                   padding: '6px 10px',
                   fontSize: '22px',
-                  color: 'var(--pixel-text)',
-                  background: hoveredFolder === i ? 'var(--pixel-btn-hover-bg)' : 'transparent',
+                  color: 'var(--dash-text)',
+                  background: hoveredFolder === i ? 'var(--dash-btn-hover-bg)' : 'transparent',
                   border: 'none',
                   borderRadius: 0,
                   cursor: 'pointer',
@@ -155,10 +155,10 @@ export function BottomToolbar({
             ? { ...btnActive }
             : {
                 ...btnBase,
-                background: hovered === 'edit' ? 'var(--pixel-btn-hover-bg)' : btnBase.background,
+                background: hovered === 'edit' ? 'var(--dash-btn-hover-bg)' : btnBase.background,
               }
         }
-        title="Edit office layout"
+        title="Edit layout"
       >
         Layout
       </button>
@@ -172,7 +172,7 @@ export function BottomToolbar({
               ? { ...btnActive }
               : {
                   ...btnBase,
-                  background: hovered === 'settings' ? 'var(--pixel-btn-hover-bg)' : btnBase.background,
+                  background: hovered === 'settings' ? 'var(--dash-btn-hover-bg)' : btnBase.background,
                 }
           }
           title="Settings"
